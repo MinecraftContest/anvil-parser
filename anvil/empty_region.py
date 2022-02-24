@@ -98,6 +98,32 @@ class EmptyRegion:
         else:
             self.chunks[chunk.z % 32 * 32 + chunk.x % 32] = chunk
 
+    def add_raw_chunk(self, x: int, z: int, chunk: nbt.NBTFile):
+        """
+        Adds given nbt chunk data to this region.
+        Will overwrite if a chunk already exists in this location
+
+        Parameters
+        ----------
+        x: int
+        z: int
+        chunk: :class:`nbt.NBTFile`
+
+        Raises
+        ------
+        anvil.OutOfBoundCoordidnates
+            If the chunk (x, z) is not inside this region
+        """
+        if not self.inside(x, 0, z, chunk=True):
+            raise OutOfBoundsCoordinates(f'Chunk ({x}, {z}) is not inside this region')
+
+        chunk_data = BytesIO()
+        chunk.write_file(buffer=chunk_data)
+        chunk_data.seek(0)
+        chunk_data = zlib.compress(chunk_data.read())
+        self.chunks_data[z % 32 * 32 + x % 32] = chunk_data
+
+
     def add_section(self, section: EmptySection, x: int, z: int, replace: bool=True):
         """
         Adds section to chunk at (x, z).
